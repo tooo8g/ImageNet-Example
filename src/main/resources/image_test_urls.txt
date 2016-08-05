@@ -1,30 +1,30 @@
 # List of sample URLs from http://image-net.org/download-imageurls
 # These images were downloaded from the following urls into resources dir to conduct sample run
 # Note, the images in their original resolutions may be subject to copyright
-#   Terrier = n2097474
+#   Terrier = n02097474
 #   Dragonfly = n02268443
 #   Marimba = n03721384
 #   Toiletpaper = n15075141
-n2097474,http://farm3.static.flickr.com/2165/2221059846_79f38a4f05.jpg
-n2097474,http://farm2.static.flickr.com/1110/694365805_555b483134.jpg
-n2097474,http://static.flickr.com/156/428932732_b867d9d614.jpg
-n2097474,http://www.dogpage.us/images/tibetanterrier.jpg
-n2097474,http://img.china.alibaba.com/news/upload/2/4_1135740763490.jpg
-n2097474,http://static.flickr.com/50/128377261_97cda743f2.jpg
-n2097474,http://static.flickr.com/6/85634297_543a41f666.jpg
-n2097474,http://farm1.static.flickr.com/87/212013811_44c8c829de.jpg
-n2097474,http://static.flickr.com/236/456620966_a8fc4127b1.jpg
-n2097474,http://farm1.static.flickr.com/44/119794552_4d48fa027e.jpg
-n2097474,http://static.flickr.com/121/256447547_e632438d81.jpg
-n2097474,http://farm1.static.flickr.com/52/140081635_09f737ebed.jpg
-n2097474,http://static.flickr.com/109/314189753_dfca0e76fa.jpg
-n2097474,http://www.gotdogsonline.com/tibetan-terrier-pictures-breeders-puppies-rescue/pictures-photos/tibetan-terrier-0019.jpg
-n2097474,http://farm1.static.flickr.com/215/503542597_56624f742e.jpg
-n2097474,http://static.flickr.com/191/503356471_a7ea433b5a.jpg
-n2097474,http://www.petplanet.co.uk/petplanet/images/breeds/Tibetan_Terrier.jpg
-n2097474,http://farm1.static.flickr.com/29/67360754_643ccfee9d.jpg
-n2097474,http://www.dogtron.com/dog/img/tibetan_terrier-m.jpg
-n2097474,http://farm1.static.flickr.com/35/92879631_5d0f31e780.jpg
+n02097474,http://farm3.static.flickr.com/2165/2221059846_79f38a4f05.jpg
+n02097474,http://farm2.static.flickr.com/1110/694365805_555b483134.jpg
+n02097474,http://static.flickr.com/156/428932732_b867d9d614.jpg
+n02097474,http://www.dogpage.us/images/tibetanterrier.jpg
+n02097474,http://img.china.alibaba.com/news/upload/2/4_1135740763490.jpg
+n02097474,http://static.flickr.com/50/128377261_97cda743f2.jpg
+n02097474,http://static.flickr.com/6/85634297_543a41f666.jpg
+n02097474,http://farm1.static.flickr.com/87/212013811_44c8c829de.jpg
+n02097474,http://static.flickr.com/236/456620966_a8fc4127b1.jpg
+n02097474,http://farm1.static.flickr.com/44/119794552_4d48fa027e.jpg
+n02097474,http://static.flickr.com/121/256447547_e632438d81.jpg
+n02097474,http://farm1.static.flickr.com/52/140081635_09f737ebed.jpg
+n02097474,http://static.flickr.com/109/314189753_dfca0e76fa.jpg
+n02097474,http://www.gotdogsonline.com/tibetan-terrier-pictures-breeders-puppies-rescue/pictures-photos/tibetan-terrier-0019.jpg
+n02097474,http://farm1.static.flickr.com/215/503542597_56624f742e.jpg
+n02097474,http://static.flickr.com/191/503356471_a7ea433b5a.jpg
+n02097474,http://www.petplanet.co.uk/petplanet/images/breeds/Tibetan_Terrier.jpg
+n02097474,http://farm1.static.flickr.com/29/67360754_643ccfee9d.jpg
+n02097474,http://www.dogtron.com/dog/img/tibetan_terrier-m.jpg
+n02097474,http://farm1.static.flickr.com/35/92879631_5d0f31e780.jpg
 n02268443,http://static.flickr.com/78/164794216_c2abfdb96c.jpg
 n02268443,http://latimesblogs.latimes.com/photos/uncategorized/2008/05/20/dragonfly_so_pretty.jpg
 n02268443,http://static.flickr.com/239/455215066_108b162bb4.jpg
