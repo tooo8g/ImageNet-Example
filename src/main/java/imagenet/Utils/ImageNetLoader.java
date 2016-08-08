@@ -148,7 +148,7 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable{
     public void load()  {
         defineLabels(new File(BASE_DIR, labelFilePath));
         // Downloading a sample set of data if not available
-        if (!fullDir.exists()) {
+        /*if (!fullDir.exists()) {
             fullDir.mkdir();
             log.info("Downloading {}...", FilenameUtils.getBaseName(fullDir.toString()));
             CSVRecordReader reader = new CSVRecordReader(7, ",");
@@ -170,6 +170,32 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable{
                 catch(Exception e){
                     e.printStackTrace();
                 }
+            }
+        }*/
+        // Downloading a sample set of data if not available
+        if (!fullDir.exists()){
+            fullDir.mkdir();
+        }
+        CSVRecordReader reader = new CSVRecordReader(7, ",");
+        log.info("Checking files in the dir {} one by one, then download or not ... ", FilenameUtils.getBaseName(fullDir.toString()));
+        try {
+            reader.initialize(new FileSplit(urlList));
+        } catch (IOException | InterruptedException e) {
+            e.printStackTrace();
+        }
+        int count = 0;
+        while(reader.hasNext()) {
+            Collection<Writable> val = reader.next();
+            Object url =  val.toArray()[1];
+            String fileName = val.toArray()[0] + "_" + count++ + ".jpg";
+//            downloadAndUntar(generateMaps(fileName, url.toString()), fullDir);
+            try{
+                downloadAndUntar(generateMaps(fileName, url.toString()), fullDir);
+            }
+            catch(Exception e){
+                log.error("fileName is {}, url: {} is cann`t download",fileName,url);
+                e.printStackTrace();
+                throw e;
             }
         }
         FileSplit fileSplit = new FileSplit(fullDir, ALLOWED_FORMATS, rng);
