@@ -41,9 +41,9 @@ public class ImageNetMain {
 
     // values to pass in from command line when compiled, esp running remotely
     @Option(name="--version",usage="Version to run (Standard, SparkStandAlone, SparkCluster)",aliases = "-v")
-    protected String version = "SparkStandAlone";
+    protected String version = "Standard";
     @Option(name="--modelType",usage="Type of model (AlexNet, VGGNetA, VGGNetB)",aliases = "-mT")
-    protected String modelType = "LeNet";
+    protected String modelType = "AlexNet";
     @Option(name="--batchSize",usage="Batch size",aliases="-b")
     protected int batchSize = 40;
     @Option(name="--testBatchSize",usage="Test Batch size",aliases="-tB")
@@ -61,7 +61,7 @@ public class ImageNetMain {
     @Option(name="--testFolder",usage="Test folder",aliases="-teF")
     protected String testFolder = "test";
     @Option(name="--saveModel",usage="Save model",aliases="-sM")
-    protected boolean saveModel = false;
+    protected boolean saveModel = true;
     @Option(name="--saveParams",usage="Save parameters",aliases="-sP")
     protected boolean saveParams = false;
 
@@ -186,7 +186,7 @@ public class ImageNetMain {
         System.out.println("Total evaluation runtime: " + testTime + " minutes");
         System.out.println("****************************************************");
         if (saveModel) NetSaverLoaderUtils.saveNetworkAndParameters(model, outputPath.toString());
-        if (saveParams) NetSaverLoaderUtils.saveParameters(model, layerNames, paramPaths);
+        if (saveParams) NetSaverLoaderUtils.saveParameters(model, model.getLayerNames().toArray(new String[]{}), paramPaths);
 
 
     }

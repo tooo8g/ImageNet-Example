@@ -72,6 +72,7 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
 
             try {
                 invokeListeners(image);
+                //System.out.println("Decoding image " + image.getName());
                 return (List<Writable>) setUpRecord(imageLoader.asMatrix(image), image.getName());
             } catch (Exception e) {
                 e.printStackTrace();

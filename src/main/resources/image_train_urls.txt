@@ -58,7 +58,6 @@ n02268443,http://static.flickr.com/80/247402897_2e1531b205.jpg
 n02268443,http://static.flickr.com/15/21485673_edf776e7bf.jpg
 n02268443,http://perso.wanadoo.es/fmg97/photogallery/photo28067/Libelula%20emperador.jpg
 n02268443,http://farm1.static.flickr.com/140/395884403_9f71e185ec_o.jpg
-n02268443,http://photos.raditha.com/images/dragon-fly2.jpg
 n02268443,http://www.jnweb.com/british-columbia/images/dragonfly-P2341-210.jpg
 n02268443,http://static.flickr.com/254/515573223_4463b651a8.jpg
 n02268443,http://news.xinhuanet.com/english/2008-09/21/xin_18209052113460462233749.jpg
@@ -146,7 +145,6 @@ n15075141,http://farm4.static.flickr.com/3518/4066344481_c7e00e20a9.jpg
 n15075141,http://farm3.static.flickr.com/2688/4133641928_faac1caa59.jpg
 n15075141,http://farm3.static.flickr.com/2132/2367395570_34c652b9e9.jpg
 n15075141,http://farm3.static.flickr.com/2729/4092996690_63510592a4.jpg
-n15075141,http://www.kittyhell.com/wp-content/uploads/2008/01/hello-kitty-toilet-paper-storage.thumbnail.jpg
 n15075141,http://farm1.static.flickr.com/151/386789249_4febb01849.jpg
 n15075141,http://farm3.static.flickr.com/2307/2290910351_d0388762d3.jpg
 n15075141,http://farm1.static.flickr.com/153/409358694_11abc2ed06.jpg

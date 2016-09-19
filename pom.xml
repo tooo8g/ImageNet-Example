@@ -11,9 +11,9 @@
 
     <properties>
         <nd4j.backend>nd4j-native</nd4j.backend>
-        <nd4j.version>0.5.1-SNAPSHOT</nd4j.version>
-        <dl4j.version>0.5.1-SNAPSHOT</dl4j.version>
-        <datavec.version>0.5.1-SNAPSHOT</datavec.version>
+        <nd4j.version>0.6.0</nd4j.version>
+        <dl4j.version>0.6.0</dl4j.version>
+        <datavec.version>0.6.0</datavec.version>
         <spark.version>1.6.0</spark.version>
         <scala.binary.version>2.11</scala.binary.version>
         <junit.version>4.12</junit.version>

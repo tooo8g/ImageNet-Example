@@ -118,12 +118,13 @@ public class ImageNetStandardExample extends ImageNetMain {
 
         double default_eps = 1e-6;
         double default_max_rel_error = 0.25;
+        double default_min_rel_error = 1e-14;
         boolean print_results = true;
         boolean return_on_first_failure = false;
         boolean useUpdater = true;
 
-        boolean gradOK = GradientCheckUtil.checkGradients(model, default_eps, default_max_rel_error,
-                print_results, return_on_first_failure, imgNet.getFeatures(), imgNet.getLabels(), useUpdater);
+        boolean gradOK = GradientCheckUtil.checkGradients(model, default_eps, default_max_rel_error, default_min_rel_error,
+                print_results, return_on_first_failure, imgNet.getFeatures(), imgNet.getLabels());
 
 //        assertTrue(gradOK);
 
