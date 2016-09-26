@@ -57,8 +57,8 @@ ImageNet data can be accessed at [ImageNet site](http://image-net.org/challenges
 
 To work with a small sample of data, use the urls listed in the following files, download the images into the resources folder under new folders called train and test:
 
-- [image_train_urls.txt](image_train_urls.txt)
-- [image_test_urls.txt](image_test_urls.txt)
+- [https://github.com/deeplearning4j/ImageNet-Example/blob/master/src/main/resources/image_train_urls.txt](image_train_urls.txt)
+- [https://github.com/deeplearning4j/ImageNet-Example/blob/master/src/main/resources/image_test_urls.txt](image_test_urls.txt)
 
 Note: When working with data its valuable to change up the color, shape, orientation, pixels, size, etc. There is extensive literature that can help with how to adapt data.
 
