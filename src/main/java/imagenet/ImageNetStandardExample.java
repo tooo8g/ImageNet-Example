@@ -31,8 +31,6 @@ public class ImageNetStandardExample extends ImageNetMain {
     }
 
     public void initialize() throws Exception {
-        boolean gradientCheck = false;
-
         // Build
         buildModel();
         setListeners();
@@ -48,9 +46,6 @@ public class ImageNetStandardExample extends ImageNetMain {
             trainIter = loadData(numTrainExamples, transform, DataModeEnum.CLS_TRAIN);
             trainModel(trainIter);
         }
-
-        // Gradient Check
-        if (gradientCheck) gradientCheck(trainIter, model);
 
         // Evaluation
         numEpochs = 1;
@@ -94,42 +89,5 @@ public class ImageNetStandardExample extends ImageNetMain {
         testTime = (int) (endTime - startTime) / 60000;
 
     }
-
-    private void gradientCheck(DataSetIterator dataIter, MultiLayerNetwork model){
-        DataSet imgNet;
-        System.out.println("Gradient Check....");
-
-        imgNet = dataIter.next();
-        String name = new Object() {
-        }.getClass().getEnclosingMethod().getName();
-
-        model.setInput(imgNet.getFeatures());
-        model.setLabels(imgNet.getLabels());
-        model.computeGradientAndScore();
-        double scoreBefore = model.score();
-        for (int j = 0; j < 1; j++)
-            model.fit(imgNet);
-        model.computeGradientAndScore();
-        double scoreAfter = model.score();
-//            String msg = name + " - score did not (sufficiently) decrease during learning (before=" + scoreBefore + ", scoreAfter=" + scoreAfter + ")";
-//            assertTrue(msg, scoreAfter < 0.8 * scoreBefore);
-        for (int j = 0; j < model.getnLayers(); j++)
-            System.out.println("Layer " + j + " # params: " + model.getLayer(j).numParams());
-
-        double default_eps = 1e-6;
-        double default_max_rel_error = 0.25;
-        double default_min_rel_error = 1e-14;
-        boolean print_results = true;
-        boolean return_on_first_failure = false;
-        boolean useUpdater = true;
-
-        boolean gradOK = GradientCheckUtil.checkGradients(model, default_eps, default_max_rel_error, default_min_rel_error,
-                print_results, return_on_first_failure, imgNet.getFeatures(), imgNet.getLabels());
-
-//        assertTrue(gradOK);
-
-    }
-
-
 
 }

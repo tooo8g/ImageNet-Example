@@ -179,6 +179,7 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable{
         CSVRecordReader reader = new CSVRecordReader(7, ",");
         log.info("Checking files in the dir {} one by one, then download or not ... ", FilenameUtils.getBaseName(fullDir.toString()));
         try {
+            // TODO fix FileSplit with revisions from DataVec on how to load data...
             reader.initialize(new FileSplit(urlList));
         } catch (IOException | InterruptedException e) {
             e.printStackTrace();
