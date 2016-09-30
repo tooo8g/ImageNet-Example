@@ -51,18 +51,6 @@ public class ImageNetGoogleLeNetExample {
     	ComputationGraph model = new GoogleLeNet(HEIGHT, WIDTH, CHANNELS, numLabels, SEED, ITERATIONS).init();
 
         // Listeners
-    	/*
-        ParamAndGradientIterationListener.builder()
-                .outputToFile(true)
-                .file(new File(System.getProperty("java.io.tmpdir") + "/paramAndGradTest.txt"))
-                .outputToConsole(true).outputToLogger(false)
-                .iterations(1).printHeader(true)
-                .printMean(false)
-                .printMinMax(false)
-                .printMeanAbsValue(true)
-                .delimiter("\t").build();
-		*/
-    	
         model.setListeners(new ScoreIterationListener(listenerFreq)); // not needed for spark?
         
         // Train
