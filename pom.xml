@@ -111,7 +111,7 @@
         <dependency>
             <artifactId>datavec-spark_${scala.binary.version}</artifactId>
             <groupId>org.datavec</groupId>
-            <version>${dl4j.version}</version>
+            <version>${datavec.version}</version>
             <exclusions>
                 <exclusion>
                     <groupId>org.slf4j</groupId>
