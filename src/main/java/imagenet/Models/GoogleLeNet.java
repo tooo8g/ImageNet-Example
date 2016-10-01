@@ -7,6 +7,7 @@ import org.deeplearning4j.nn.conf.LearningRatePolicy;
 import org.deeplearning4j.nn.conf.NeuralNetConfiguration;
 import org.deeplearning4j.nn.conf.Updater;
 import org.deeplearning4j.nn.conf.graph.MergeVertex;
+import org.deeplearning4j.nn.conf.inputs.InputType;
 import org.deeplearning4j.nn.conf.layers.ConvolutionLayer;
 import org.deeplearning4j.nn.conf.layers.DenseLayer;
 import org.deeplearning4j.nn.conf.layers.LocalResponseNormalization;
@@ -113,7 +114,6 @@ public class GoogleLeNet {
 
     		graph
     	    .addInputs("input")
-    	    //.setInputTypes(InputType.convolutional(height,width,channels))
     	    .addLayer("cnn1", conv7x7(this.channels, 64, 0.2), "input")
     	    .addLayer("max1", new SubsamplingLayer.Builder(new int[]{3,3}, new int[]{2,2}, new int[]{0,0}).build(), "cnn1")
     	    .addLayer("lrn1", new LocalResponseNormalization.Builder(5, 1e-4, 0.75).build(), "max1")
