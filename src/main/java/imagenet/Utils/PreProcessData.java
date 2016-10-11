@@ -101,13 +101,13 @@ public class PreProcessData {
 //        }
 //    }
 
-    // TODO remove - temp to test results
+    // TODO remove - temp to test results - Rework
     public void checkFile(String inputPath, DataModeEnum dataModeEnum){
-        JavaPairRDD<Text, BytesWritable> data = sc.sequenceFile(inputPath, Text.class, BytesWritable.class);
-        RecordReaderBytesFunction recordReaderFunc = new RecordReaderBytesFunction(
-                new ImageNetRecordReader(40, 40, 3, null, null, 255, dataModeEnum));
-        JavaRDD<List<Writable>> rdd = data.map(recordReaderFunc);
-        JavaRDD<DataSet> ds = rdd.map(new DataVecDataSetFunction(-1, 1860, false));
+//        JavaPairRDD<Text, BytesWritable> data = sc.sequenceFile(inputPath, Text.class, BytesWritable.class);
+//        RecordReaderBytesFunction recordReaderFunc = new RecordReaderBytesFunction(
+//                new ImageNetRecordReader(40, 40, 3, null, null, 255, dataModeEnum));
+//        JavaRDD<List<Writable>> rdd = data.map(recordReaderFunc);
+//        JavaRDD<DataSet> ds = rdd.map(new DataVecDataSetFunction(-1, 1860, false));
     }
 
     public JavaPairRDD<Text, BytesWritable> getFile(){

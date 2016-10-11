@@ -4,8 +4,17 @@ import imagenet.Models.AlexNet;
 import imagenet.Models.LeNet;
 import imagenet.Models.VGGNetA;
 import imagenet.Models.VGGNetD;
+import imagenet.Utils.DataModeEnum;
 import imagenet.Utils.ImageNetLoader;
+import imagenet.Utils.ImageNetRecordReader;
 import org.apache.commons.io.FilenameUtils;
+import org.datavec.image.recordreader.BaseImageRecordReader;
+import org.datavec.image.transform.FlipImageTransform;
+import org.datavec.image.transform.ImageTransform;
+import org.datavec.image.transform.WarpImageTransform;
+import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
+import org.deeplearning4j.datasets.iterator.MultipleEpochsIterator;
+import org.deeplearning4j.eval.Evaluation;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.api.IterationListener;
 import org.deeplearning4j.optimize.listeners.ParamAndGradientIterationListener;
@@ -15,12 +24,14 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.nd4j.linalg.api.buffer.DataBuffer;
+import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.*;
+import java.util.concurrent.TimeUnit;
 
 /**
  * ImageNet is a large scale visual recognition challenge run by Stanford and Princeton. The competition covers
@@ -40,18 +51,16 @@ public class ImageNetMain {
     private static final Logger log = LoggerFactory.getLogger(ImageNetMain.class);
 
     // values to pass in from command line when compiled, esp running remotely
-    @Option(name="--version",usage="Version to run (Standard, SparkStandAlone, SparkCluster)",aliases = "-v")
-    protected String version = "SparkStandAlone";
+    @Option(name="--useSpark",usage="Use Spark",aliases = "-sp")
+    protected boolean useSpark = false;
     @Option(name="--modelType",usage="Type of model (AlexNet, VGGNetA, VGGNetB)",aliases = "-mT")
     protected String modelType = "LeNet";
     @Option(name="--batchSize",usage="Batch size",aliases="-b")
     protected int batchSize = 40;
-    @Option(name="--testBatchSize",usage="Test Batch size",aliases="-tB")
-    protected int testBatchSize = batchSize;
     @Option(name="--numBatches",usage="Number of batches",aliases="-nB")
     protected int numBatches = 1;
-    @Option(name="--numTestBatches",usage="Number of test batches",aliases="-nTB")
-    protected int numTestBatches = numBatches;
+    @Option(name="--splitTrainTest",usage="Percent to split for train and test (how much goes to train)",aliases="-split")
+    protected double splitTrainTest = 0.8;
     @Option(name="--numEpochs",usage="Number of epochs",aliases="-nE")
     protected int numEpochs = 5;
     @Option(name="--iterations",usage="Number of iterations",aliases="-i")
@@ -82,12 +91,9 @@ public class ImageNetMain {
     protected int seed = 42;
     protected Random rng = new Random(seed);
     protected int listenerFreq = 1;
-    protected int numTrainExamples = batchSize * numBatches;
-    protected int numTestExamples = testBatchSize * numTestBatches;
-    protected int maxExamples2Label = 10;
+    protected int numExamples = batchSize * numBatches;
+    protected int maxExamplesPerLabel = 10;
     protected int asynQues = 5;
-    protected int normalizeValue = 255;
-    protected double splitTrainTest = 0.8;
 
     // Paths for data
     protected String basePath = ImageNetLoader.BASE_DIR;
@@ -120,21 +126,50 @@ public class ImageNetMain {
             parser.printUsage(System.err);
         }
 
-        switch (version) {
-            case "Standard":
-                new ImageNetStandardExample().initialize();
-                break;
-            case "SparkStandAlone":
-                new ImageNetSparkExample().initialize();
-                break;
-            case "SparkCluster":
-                new ImageNetSparkExample().initialize();
-                break;
-            default:
-                break;
+        if(useSpark) {
+            System.out.println("Spark functions our outdated and need overhaul to include major changes in 2016.");
+        } else {
+            // Build
+            buildModel();
+            setListeners();
+
+            // Train
+            ImageTransform flipTransform = new FlipImageTransform(new Random(42));
+            ImageTransform warpTransform = new WarpImageTransform(new Random(42), 42);
+            List<ImageTransform> transforms = Arrays.asList(new ImageTransform[] {null, flipTransform, warpTransform});
+            ImageNetRecordReader reader = new ImageNetRecordReader(DataModeEnum.CLS_TRAIN, batchSize, numExamples, numLabels, maxExamplesPerLabel, HEIGHT, WIDTH, CHANNELS, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
+            MultipleEpochsIterator trainIter;
+
+            for(ImageTransform transform: transforms) {
+                log.info("Training with " + (transform == null? "no": transform.toString()) + " transform");
+
+                trainIter = new MultipleEpochsIterator(numEpochs, new RecordReaderDataSetIterator(reader.getTrain(transform), batchSize, 1, numLabels));
+                trainTime = trainModel(trainIter);
+            }
+
+            // Evaluation
+
+            MultipleEpochsIterator testIter = new MultipleEpochsIterator(1, new RecordReaderDataSetIterator(reader.getTest(null), batchSize, 1, numLabels));
+            testTime = evaluatePerformance(testIter);
+
+            // Save
+            saveAndPrintResults();
+
         }
+
         System.out.println("****************Example finished********************");
     }
+
+//    private MultipleEpochsIterator loadData(int numExamples, ImageTransform transform, DataModeEnum dataModeEnum){
+//        System.out.println("Load data....");
+//
+//        // TODO incorporate some formate of below code when using full validation set to pass valLabelMap through iterator
+////                RecordReader testRecordReader = new ImageNetRecordReader(numColumns, numRows, nChannels, true, labelPath, valLabelMap); // use when pulling from main val for all labels
+////                testRecordReader.initialize(new LimitFileSplit(new File(testData), allForms, totalNumExamples, numCategories, Pattern.quote("_"), 0, new Random(123)));
+//
+//        return new MultipleEpochsIterator(numEpochs,
+//                );
+//    }
 
     protected void buildModel() {
         System.out.println("Build model....");
@@ -180,9 +215,30 @@ public class ImageNetMain {
 
     }
 
+
+    private int trainModel(MultipleEpochsIterator data){
+        System.out.println("Train model....");
+        startTime = System.currentTimeMillis();
+        model.fit(data);
+        endTime = System.currentTimeMillis();
+        return (int) (endTime - startTime);
+    }
+
+    private int evaluatePerformance(MultipleEpochsIterator iter){
+        System.out.println("Evaluate model....");
+
+        startTime = System.currentTimeMillis();
+        Evaluation eval = model.evaluate(iter);
+        endTime = System.currentTimeMillis();
+        System.out.println(eval.stats(true));
+        return (int) (endTime - startTime);
+
+    }
+
     protected void saveAndPrintResults(){
         System.out.println("****************************************************");
-        System.out.println("Total training runtime: " + trainTime + " minutes");
+        printTime("train", trainTime);
+        printTime("test", testTime);
         System.out.println("Total evaluation runtime: " + testTime + " minutes");
         System.out.println("****************************************************");
         if (saveModel) NetSaverLoaderUtils.saveNetworkAndParameters(model, outputPath.toString());
@@ -191,8 +247,16 @@ public class ImageNetMain {
 
     }
 
+    public static void printTime(String name, long ms){
+        log.info(name + " time: {} min, {} sec | {} milliseconds",
+                TimeUnit.MILLISECONDS.toMinutes(ms),
+                TimeUnit.MILLISECONDS.toSeconds(ms) -
+                        TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(ms)),
+                ms);
+    }
+
     public static void main(String[] args) throws Exception {
-        new ImageNetStandardExample().run(args);
+        new ImageNetMain().run(args);
     }
 
 

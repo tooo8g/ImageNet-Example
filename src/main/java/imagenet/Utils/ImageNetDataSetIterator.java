@@ -41,18 +41,17 @@ public class ImageNetDataSetIterator extends RecordReaderDataSetIterator {
      * @param numExamples the overall number of examples
      * @param imgDim an array of width, height and channels
      * @param numLabels the overall number of examples
-     * @param maxExample2Label max num examples to a label
+     * @param maxExamplesPerLabel max num examples to a label
      * @param dataModeEnum which type of data to load CLS_TRAIN, CLS_VAL, DET_TRAIN, DET_VAL
      * @param labelGenerator path label generator to use
      * @param splitTrainTest the percentage to split data for train and remainder goes to test
-     * @param imageTransform how to transform the image
      * @param normalizeValue value to divide pixels by to normalize
      * @param localDir File path to an explicit directory
      * @param rng random number to lock in batch shuffling
 
      * */
-    public ImageNetDataSetIterator(int batchSize, int numExamples, int[] imgDim, int numLabels, int maxExample2Label, PathLabelGenerator labelGenerator, DataModeEnum dataModeEnum, double splitTrainTest, ImageTransform imageTransform, int normalizeValue, Random rng, File localDir) {
-        super(new ImageNetLoader(batchSize, numExamples, numLabels, maxExample2Label, labelGenerator, dataModeEnum, splitTrainTest, rng, localDir).getRecordReader(imgDim, imageTransform, normalizeValue), batchSize, 1, numLabels);
+    public ImageNetDataSetIterator(int batchSize, int numExamples, int[] imgDim, int numLabels, int maxExamplesPerLabel, PathLabelGenerator labelGenerator, DataModeEnum dataModeEnum, double splitTrainTest, ImageTransform imageTransform, int normalizeValue, Random rng, File localDir) {
+        super(new ImageNetRecordReader(dataModeEnum, batchSize, numExamples, numLabels, maxExamplesPerLabel, imgDim[0], imgDim[1], imgDim[2], labelGenerator, splitTrainTest, rng), batchSize, 1, numLabels);
     }
 
 }
