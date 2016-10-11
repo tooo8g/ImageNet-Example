@@ -5,7 +5,6 @@ import imagenet.Utils.DataModeEnum;
 import imagenet.Utils.ImageNetLoader;
 import imagenet.Utils.ImageNetRecordReader;
 import org.apache.commons.io.FilenameUtils;
-import org.datavec.image.recordreader.BaseImageRecordReader;
 import org.datavec.image.transform.FlipImageTransform;
 import org.datavec.image.transform.ImageTransform;
 import org.datavec.image.transform.WarpImageTransform;
@@ -24,6 +23,7 @@ import org.kohsuke.args4j.Option;
 import org.nd4j.linalg.api.buffer.DataBuffer;
 import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
+import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
@@ -54,15 +54,21 @@ public class ImageNetMain {
     @Option(name="--useSpark",usage="Use Spark",aliases = "-sp")
     protected boolean useSpark = false;
     @Option(name="--modelType",usage="Type of model (AlexNet, VGGNetA, VGGNetB)",aliases = "-mT")
-    protected String modelType = "LeNet";
+    protected String modelType = "AlexNet";
     @Option(name="--batchSize",usage="Batch size",aliases="-b")
-    protected int batchSize = 40;
+    protected int batchSize = 80;
+    @Option(name="--maxExamplesPerLabelTrain",usage="Max examples per label",aliases="-mBai")
+    protected int maxExamplesPerLabelTrain = 20;
+    @Option(name="--maxExamplesPerLabelTest",usage="Max examples per label",aliases="-mBes")
+    protected int maxExamplesPerLabelTest = 20;
     @Option(name="--numBatches",usage="Number of batches",aliases="-nB")
     protected int numBatches = 1;
+    @Option(name="--numExamples",usage="Number of examples",aliases="-nEx")
+    protected int numExamples = 210; // batchSize * numBatches;
     @Option(name="--splitTrainTest",usage="Percent to split for train and test (how much goes to train)",aliases="-split")
-    protected double splitTrainTest = 0.8;
+    protected double splitTrainTest = 1.0; // Different files for train and test
     @Option(name="--numEpochs",usage="Number of epochs",aliases="-nE")
-    protected int numEpochs = 5;
+    protected int numEpochs = 20;
     @Option(name="--iterations",usage="Number of iterations",aliases="-i")
     protected int iterations = 1;
     @Option(name="--trainFolder",usage="Train folder",aliases="-taF")
@@ -73,6 +79,8 @@ public class ImageNetMain {
     protected boolean saveModel = false;
     @Option(name="--saveParams",usage="Save parameters",aliases="-sP")
     protected boolean saveParams = false;
+    @Option(name="--saveUpdater",usage="Save updater",aliases="-sU")
+    protected boolean saveUpdater = false;
 
     @Option(name="--confName",usage="Model configuration file name",aliases="-conf")
     protected String confName;
@@ -84,16 +92,14 @@ public class ImageNetMain {
     protected int trainTime;
     protected int testTime;
 
-    protected static final int HEIGHT = ImageNetLoader.HEIGHT;
-    protected static final int WIDTH = ImageNetLoader.WIDTH;
-    protected static final int CHANNELS = ImageNetLoader.CHANNELS;
+    protected static final int height = ImageNetLoader.HEIGHT;
+    protected static final int width = ImageNetLoader.WIDTH;
+    protected static final int channels = ImageNetLoader.CHANNELS;
     protected static final int numLabels = ImageNetLoader.NUM_CLS_LABELS;
     protected int seed = 42;
     protected Random rng = new Random(seed);
     protected int listenerFreq = 1;
-    protected int numExamples = batchSize * numBatches;
-    protected int maxExamplesPerLabel = 10;
-    protected int asynQues = 5;
+    protected int numCores = 5;
 
     // Paths for data
     protected String basePath = ImageNetLoader.BASE_DIR;
@@ -106,11 +112,12 @@ public class ImageNetMain {
 //    protected String testPath = FilenameUtils.concat(System.getProperty("user.dir"), "src/main/resources/" + testFolder + "/*");
 
     protected String outputPath = NetSaverLoaderUtils.defineOutputDir(modelType.toString());
+    protected String updaterPath = NetSaverLoaderUtils.defineOutputDir(modelType.toString() + "Updater");
     protected Map<String, String> paramPaths = new HashMap<>();
     protected String[] layerNames; // Names of layers to store parameters
     protected String rootParamPath;
 
-    protected String sparkMasterUrl = "local[" + asynQues + "]";
+    protected String sparkMasterUrl = "local[" + numCores + "]";
 
     protected MultiLayerNetwork model = null;
     protected ComputationGraph modelCG = null;
@@ -135,22 +142,32 @@ public class ImageNetMain {
             setListeners();
 
             // Train
+            DataSetPreProcessor preProcessor = new DataSetPreProcessor() {
+                @Override
+                public void preProcess(org.nd4j.linalg.dataset.api.DataSet toPreProcess) {
+                    toPreProcess.divideBy(255);
+                }
+            };
             ImageTransform flipTransform = new FlipImageTransform(new Random(42));
             ImageTransform warpTransform = new WarpImageTransform(new Random(42), 42);
             List<ImageTransform> transforms = Arrays.asList(new ImageTransform[] {null, flipTransform, warpTransform});
-            ImageNetRecordReader reader = new ImageNetRecordReader(DataModeEnum.CLS_TRAIN, batchSize, numExamples, numLabels, maxExamplesPerLabel, HEIGHT, WIDTH, CHANNELS, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
+            ImageNetRecordReader reader = new ImageNetRecordReader(DataModeEnum.CLS_TRAIN, batchSize, numExamples, numLabels, maxExamplesPerLabelTrain, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
+            DataSetIterator iter;
             MultipleEpochsIterator trainIter;
 
             for(ImageTransform transform: transforms) {
                 log.info("Training with " + (transform == null? "no": transform.toString()) + " transform");
-
-                trainIter = new MultipleEpochsIterator(numEpochs, new RecordReaderDataSetIterator(reader.getTrain(transform), batchSize, 1, numLabels));
+                iter = new RecordReaderDataSetIterator(reader.getSplit(transform, 0), batchSize, 1, numLabels);
+                iter.setPreProcessor(preProcessor);
+                trainIter = new MultipleEpochsIterator(numEpochs, iter);
                 trainTime = trainModel(trainIter);
             }
 
             // Evaluation
-
-            MultipleEpochsIterator testIter = new MultipleEpochsIterator(1, new RecordReaderDataSetIterator(reader.getTest(null), batchSize, 1, numLabels));
+            reader = new ImageNetRecordReader(DataModeEnum.CLS_TEST, batchSize, numExamples, numLabels, maxExamplesPerLabelTest, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
+            iter = new RecordReaderDataSetIterator(reader.getSplit(null, 0), batchSize, 1, numLabels);
+            iter.setPreProcessor(preProcessor);
+            MultipleEpochsIterator testIter = new MultipleEpochsIterator(1, iter);
             testTime = evaluatePerformance(testIter);
 
             // Save
@@ -161,17 +178,6 @@ public class ImageNetMain {
         System.out.println("****************Example finished********************");
     }
 
-//    private MultipleEpochsIterator loadData(int numExamples, ImageTransform transform, DataModeEnum dataModeEnum){
-//        System.out.println("Load data....");
-//
-//        // TODO incorporate some formate of below code when using full validation set to pass valLabelMap through iterator
-////                RecordReader testRecordReader = new ImageNetRecordReader(numColumns, numRows, nChannels, true, labelPath, valLabelMap); // use when pulling from main val for all labels
-////                testRecordReader.initialize(new LimitFileSplit(new File(testData), allForms, totalNumExamples, numCategories, Pattern.quote("_"), 0, new Random(123)));
-//
-//        return new MultipleEpochsIterator(numEpochs,
-//                );
-//    }
-
     protected void buildModel() {
         System.out.println("Build model....");
         if (confName != null && paramName != null) {
@@ -181,19 +187,19 @@ public class ImageNetMain {
         } else {
             switch (modelType) {
                 case "LeNet":
-                    model = new LeNet(HEIGHT, WIDTH, CHANNELS, numLabels, seed, iterations).init();
+                    model = new LeNet(height, width, channels, numLabels, seed, iterations).init();
                     break;
                 case "AlexNet":
-                    model = new AlexNet(HEIGHT, WIDTH, CHANNELS, numLabels, seed, iterations).init();
+                    model = new AlexNet(height, width, channels, numLabels, seed, iterations).init();
                     break;
                 case "VGGNetA":
-                    model = new VGGNetA(HEIGHT, WIDTH, CHANNELS, numLabels, seed, iterations).init();
+                    model = new VGGNetA(height, width, channels, numLabels, seed, iterations).init();
                     break;
                 case "VGGNetD":
-                    model = new VGGNetD(HEIGHT, WIDTH, CHANNELS, numLabels, seed, iterations, rootParamPath).init();
+                    model = new VGGNetD(height, width, channels, numLabels, seed, iterations, rootParamPath).init();
                     break;
                 case "GoogleLeNet":
-                    modelCG = new GoogleLeNet(HEIGHT, WIDTH, CHANNELS, numLabels, seed, iterations).init();
+                    modelCG = new GoogleLeNet(height, width, channels, numLabels, seed, iterations).init();
                 default:
                     break;
             }
@@ -270,6 +276,7 @@ public class ImageNetMain {
         System.out.println("****************************************************");
         if (saveModel) NetSaverLoaderUtils.saveNetworkAndParameters(model, outputPath.toString());
         if (saveParams) NetSaverLoaderUtils.saveParameters(model, model.getLayerNames().toArray(new String[]{}), paramPaths);
+        if (saveUpdater) NetSaverLoaderUtils.saveUpdators(model, updaterPath);
 
 
     }

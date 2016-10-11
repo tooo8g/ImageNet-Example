@@ -1,11 +1,9 @@
 package imagenet.Utils;
 
-import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
 import org.datavec.api.io.labels.PathLabelGenerator;
 import org.datavec.api.split.InputSplit;
 import org.datavec.api.writable.IntWritable;
-import org.datavec.api.writable.Text;
 import org.datavec.api.writable.Writable;
 import org.datavec.common.RecordConverter;
 import org.datavec.image.recordreader.BaseImageRecordReader;
@@ -26,7 +24,7 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
     protected DataModeEnum dataModeEnum = DataModeEnum.CLS_TRAIN; // use to load label ids for validation data set
 
     public ImageNetRecordReader(DataModeEnum dataModeEnum, int batchSize, int numExamples, int numLabels, int maxExamplesPerLabel, int height, int width, int channels, PathLabelGenerator labelGenerator, double splitTrainTest, Random rng) {
-        super(height, width, channels, null, null, 255);
+        super(height, width, channels, null, null, 1.0);
         this.loader = new ImageNetLoader(batchSize, numExamples, numLabels, maxExamplesPerLabel, dataModeEnum, labelGenerator, splitTrainTest, rng);
         this.labelGenerator = labelGenerator; // Do not append when initializing split but use locally
         this.dataModeEnum = dataModeEnum;
@@ -69,6 +67,7 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
     @Override
     public List<Writable> next() {
         if (iter != null) {
+            List<Writable> ret = new ArrayList<>();
             File image = iter.next();
 
             if (image.isDirectory())
@@ -76,26 +75,11 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
 
             try {
                 invokeListeners(image);
-                return (List<Writable>) setUpRecord(imageLoader.asMatrix(image), image.getName());
+                ret = setUpRecord(imageLoader.asMatrix(image), image.getName());
             } catch (Exception e) {
                 e.printStackTrace();
             }
-
-            Collection<Writable> ret = new ArrayList<>();
-            if (iter.hasNext()) {
-                return (List<Writable>) ret;
-            } else {
-                if (iter.hasNext()) {
-                    try {
-                        image = iter.next();
-                        invokeListeners(image);
-                        ret.add(new Text(FileUtils.readFileToString(image)));
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
-            return (List<Writable>) ret;
+            return ret;
         } else if (record != null) {
             hitImage = true;
             invokeListeners(record);
@@ -104,11 +88,10 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
         throw new IllegalStateException("No more elements");
     }
 
-    private Collection<Writable> setUpRecord(INDArray image, String filename) throws IOException {
+    private List<Writable> setUpRecord(INDArray image, String filename) throws IOException {
         int labelId;
-        Collection<Writable> ret = RecordConverter.toRecord(image);
+        List<Writable> ret = RecordConverter.toRecord(image);
         if (dataModeEnum != DataModeEnum.CLS_VAL || dataModeEnum != DataModeEnum.DET_VAL) {
-//            String WNID = FilenameUtils.getBaseName(filename).split(pattern)[patternPosition];
             Writable WNID = labelGenerator.getLabelForPath(filename);
             labelId = labels.indexOf(labelFileIdMap.get(WNID.toString()));
         } else {
@@ -126,22 +109,11 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
     public List<Writable> record(URI uri, DataInputStream dataInputStream) throws IOException {
         invokeListeners(uri);
         labelSetup();
-        return (List<Writable>) setUpRecord(imageLoader.asRowVector(dataInputStream), FilenameUtils.getName(uri.getPath()));
+        return setUpRecord(imageLoader.asRowVector(dataInputStream), FilenameUtils.getName(uri.getPath()));
     }
 
-    public ImageNetRecordReader getTrain(ImageTransform imageTransform) throws Exception{
-        InputSplit split = loader.getTrain();
-        initialize(split, imageTransform);
-        return this;
-    }
-
-    public ImageNetRecordReader getTest(ImageTransform imageTransform) throws Exception{
-        InputSplit split = loader.getTest();
-        initialize(split, imageTransform);
-        return this;
-    }
-    public ImageNetRecordReader getCrossVal() throws Exception{
-        InputSplit split = loader.getCrossVal();
+    public ImageNetRecordReader getSplit(ImageTransform imageTransform, int splitPosition) throws Exception{
+        InputSplit split = loader.getSplit(splitPosition);
         initialize(split, imageTransform);
         return this;
     }
