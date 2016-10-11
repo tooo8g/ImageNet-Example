@@ -181,15 +181,8 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable {
         return labels;
     }
 
-    public InputSplit getTrain() throws Exception{
-         return inputSplit[0];
-    }
-
-    public InputSplit getTest() throws Exception{
-        return inputSplit[1];
-    }
-    public InputSplit getCrossVal() throws Exception{
-        return inputSplit[2];
+    public InputSplit getSplit(int splitPosition) throws Exception{
+         return inputSplit[splitPosition];
     }
 
 
