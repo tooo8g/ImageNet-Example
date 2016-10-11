@@ -242,7 +242,7 @@ public class ImageNetMain {
         System.out.println("Total evaluation runtime: " + testTime + " minutes");
         System.out.println("****************************************************");
         if (saveModel) NetSaverLoaderUtils.saveNetworkAndParameters(model, outputPath.toString());
-        if (saveParams) NetSaverLoaderUtils.saveParameters(model, layerNames, paramPaths);
+        if (saveParams) NetSaverLoaderUtils.saveParameters(model, model.getLayerNames().toArray(new String[]{}), paramPaths);
 
 
     }
