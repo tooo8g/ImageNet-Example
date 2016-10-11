@@ -22,6 +22,7 @@ import imagenet.Utils.DataModeEnum;
 import imagenet.Utils.ImageNetDataSetIterator;
 import imagenet.Utils.ImageNetLoader;
 
+@Deprecated
 public class ImageNetGoogleLeNetExample {
 	
     protected static final int HEIGHT = ImageNetLoader.HEIGHT;

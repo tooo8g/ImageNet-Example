@@ -1,9 +1,6 @@
 package imagenet;
 
-import imagenet.Models.AlexNet;
-import imagenet.Models.LeNet;
-import imagenet.Models.VGGNetA;
-import imagenet.Models.VGGNetD;
+import imagenet.Models.*;
 import imagenet.Utils.DataModeEnum;
 import imagenet.Utils.ImageNetLoader;
 import imagenet.Utils.ImageNetRecordReader;
@@ -14,6 +11,7 @@ import org.datavec.image.transform.WarpImageTransform;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.MultipleEpochsIterator;
 import org.deeplearning4j.eval.Evaluation;
+import org.deeplearning4j.nn.graph.ComputationGraph;
 import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.api.IterationListener;
 import org.deeplearning4j.optimize.listeners.ParamAndGradientIterationListener;
@@ -23,7 +21,8 @@ import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import org.nd4j.linalg.api.buffer.DataBuffer;
-import org.nd4j.linalg.dataset.api.DataSet;
+import org.nd4j.linalg.api.ndarray.INDArray;
+import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
 import org.nd4j.linalg.factory.Nd4j;
@@ -121,6 +120,7 @@ public class ImageNetMain {
     protected String sparkMasterUrl = "local[" + numCores + "]";
 
     protected MultiLayerNetwork model = null;
+    protected ComputationGraph modelCG = null;
 
     public void run(String[] args) throws Exception {
         Nd4j.dtype = DataBuffer.Type.FLOAT;
@@ -144,7 +144,7 @@ public class ImageNetMain {
             // Train
             DataSetPreProcessor preProcessor = new DataSetPreProcessor() {
                 @Override
-                public void preProcess(DataSet toPreProcess) {
+                public void preProcess(org.nd4j.linalg.dataset.api.DataSet toPreProcess) {
                     toPreProcess.divideBy(255);
                 }
             };
@@ -198,6 +198,8 @@ public class ImageNetMain {
                 case "VGGNetD":
                     model = new VGGNetD(height, width, channels, numLabels, seed, iterations, rootParamPath).init();
                     break;
+                case "GoogleLeNet":
+                    modelCG = new GoogleLeNet(height, width, channels, numLabels, seed, iterations).init();
                 default:
                     break;
             }
@@ -216,7 +218,8 @@ public class ImageNetMain {
                 .printMeanAbsValue(true)
                 .delimiter("\t").build();
 
-        model.setListeners(new ScoreIterationListener(listenerFreq)); // not needed for spark?
+        if(model != null) model.setListeners(new ScoreIterationListener(listenerFreq)); // not needed for spark?
+        else modelCG.setListeners(new ScoreIterationListener(listenerFreq));
 //        model.setListeners(new HistogramIterationListener(1));
 //        model.setListeners(Arrays.asList(new ScoreIterationListener(listenerFreq), paramListener));
 
@@ -226,7 +229,8 @@ public class ImageNetMain {
     private int trainModel(MultipleEpochsIterator data){
         System.out.println("Train model....");
         startTime = System.currentTimeMillis();
-        model.fit(data);
+        if(model != null) model.fit(data);
+        else modelCG.fit(data);
         endTime = System.currentTimeMillis();
         return (int) (endTime - startTime);
     }
@@ -234,10 +238,32 @@ public class ImageNetMain {
     private int evaluatePerformance(MultipleEpochsIterator iter){
         System.out.println("Evaluate model....");
 
+
         startTime = System.currentTimeMillis();
-        Evaluation eval = model.evaluate(iter);
+        if(model != null) {
+            Evaluation eval = model.evaluate(iter);
+            System.out.println(eval.stats(true));
+        } else {
+            List<String> labelsList = iter.getLabels();
+            Evaluation e = (labelsList == null)? new Evaluation(): new Evaluation(labelsList);
+            while(iter.hasNext()){
+                DataSet next = iter.next();
+
+                if (next.getFeatureMatrix() == null || next.getLabels() == null)
+                    break;
+
+                INDArray features = next.getFeatures();
+                INDArray labels = next.getLabels();
+
+                INDArray[] out;
+                out = modelCG.output(false, features);
+                if(labels.rank() == 3 ) e.evalTimeSeries(labels,out[0]);
+                else e.eval(labels,out[0]);
+            }
+
+        }
         endTime = System.currentTimeMillis();
-        System.out.println(eval.stats(true));
+
         return (int) (endTime - startTime);
 
     }
