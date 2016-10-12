@@ -237,33 +237,10 @@ public class ImageNetMain {
 
     private int evaluatePerformance(MultipleEpochsIterator iter){
         System.out.println("Evaluate model....");
-
-
         startTime = System.currentTimeMillis();
-        if(model != null) {
-            Evaluation eval = model.evaluate(iter);
-            System.out.println(eval.stats(true));
-        } else {
-            List<String> labelsList = iter.getLabels();
-            Evaluation e = (labelsList == null)? new Evaluation(): new Evaluation(labelsList);
-            while(iter.hasNext()){
-                DataSet next = iter.next();
-
-                if (next.getFeatureMatrix() == null || next.getLabels() == null)
-                    break;
-
-                INDArray features = next.getFeatures();
-                INDArray labels = next.getLabels();
-
-                INDArray[] out;
-                out = modelCG.output(false, features);
-                if(labels.rank() == 3 ) e.evalTimeSeries(labels,out[0]);
-                else e.eval(labels,out[0]);
-            }
-
-        }
+        Evaluation eval = (model != null)? model.evaluate(iter): modelCG.evaluate(iter);
         endTime = System.currentTimeMillis();
-
+        System.out.println(eval.stats(true));
         return (int) (endTime - startTime);
 
     }

@@ -24,7 +24,7 @@ public class ImageNetRecordReader extends BaseImageRecordReader {
     protected DataModeEnum dataModeEnum = DataModeEnum.CLS_TRAIN; // use to load label ids for validation data set
 
     public ImageNetRecordReader(DataModeEnum dataModeEnum, int batchSize, int numExamples, int numLabels, int maxExamplesPerLabel, int height, int width, int channels, PathLabelGenerator labelGenerator, double splitTrainTest, Random rng) {
-        super(height, width, channels, null, null, 1.0);
+        super(height, width, channels, null, null);
         this.loader = new ImageNetLoader(batchSize, numExamples, numLabels, maxExamplesPerLabel, dataModeEnum, labelGenerator, splitTrainTest, rng);
         this.labelGenerator = labelGenerator; // Do not append when initializing split but use locally
         this.dataModeEnum = dataModeEnum;
