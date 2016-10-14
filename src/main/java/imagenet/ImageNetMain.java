@@ -25,6 +25,8 @@ import org.nd4j.linalg.api.ndarray.INDArray;
 import org.nd4j.linalg.dataset.DataSet;
 import org.nd4j.linalg.dataset.api.DataSetPreProcessor;
 import org.nd4j.linalg.dataset.api.iterator.DataSetIterator;
+import org.nd4j.linalg.dataset.api.preprocessor.DataNormalization;
+import org.nd4j.linalg.dataset.api.preprocessor.ImagePreProcessingScaler;
 import org.nd4j.linalg.factory.Nd4j;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -142,23 +144,20 @@ public class ImageNetMain {
             setListeners();
 
             // Train
-            DataSetPreProcessor preProcessor = new DataSetPreProcessor() {
-                @Override
-                public void preProcess(org.nd4j.linalg.dataset.api.DataSet toPreProcess) {
-                    toPreProcess.divideBy(255);
-                }
-            };
             ImageTransform flipTransform = new FlipImageTransform(new Random(42));
             ImageTransform warpTransform = new WarpImageTransform(new Random(42), 42);
             List<ImageTransform> transforms = Arrays.asList(new ImageTransform[] {null, flipTransform, warpTransform});
             ImageNetRecordReader reader = new ImageNetRecordReader(DataModeEnum.CLS_TRAIN, batchSize, numExamples, numLabels, maxExamplesPerLabelTrain, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
             DataSetIterator iter;
+            DataNormalization scaler = new ImagePreProcessingScaler();
+
             MultipleEpochsIterator trainIter;
 
             for(ImageTransform transform: transforms) {
                 log.info("Training with " + (transform == null? "no": transform.toString()) + " transform");
                 iter = new RecordReaderDataSetIterator(reader.getSplit(transform, 0), batchSize, 1, numLabels);
-                iter.setPreProcessor(preProcessor);
+                scaler.fit(iter);
+                iter.setPreProcessor(scaler);
                 trainIter = new MultipleEpochsIterator(numEpochs, iter);
                 trainTime = trainModel(trainIter);
             }
@@ -166,7 +165,8 @@ public class ImageNetMain {
             // Evaluation
             reader = new ImageNetRecordReader(DataModeEnum.CLS_TEST, batchSize, numExamples, numLabels, maxExamplesPerLabelTest, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
             iter = new RecordReaderDataSetIterator(reader.getSplit(null, 0), batchSize, 1, numLabels);
-            iter.setPreProcessor(preProcessor);
+            scaler.fit(iter);
+            iter.setPreProcessor(scaler);
             MultipleEpochsIterator testIter = new MultipleEpochsIterator(1, iter);
             testTime = evaluatePerformance(testIter);
 

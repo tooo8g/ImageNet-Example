@@ -128,7 +128,6 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable {
         return imgNetData;
     }
 
-    // TODO finish setting up the following and passing into the record reader...
     private void defineLabels(File labelFilePath) {
         try {
             BufferedReader br = new BufferedReader(new FileReader(labelFilePath));
@@ -153,7 +152,6 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable {
             CSVRecordReader reader = new CSVRecordReader(7, ",");
             log.info("Checking files in the dir {} one by one, then download or not ... ", FilenameUtils.getBaseName(fullDir.toString()));
             try {
-                // TODO fix FileSplit with revisions from DataVec on how to load data...
                 reader.initialize(new FileSplit(urlList));
             } catch (IOException | InterruptedException e) {
                 e.printStackTrace();
