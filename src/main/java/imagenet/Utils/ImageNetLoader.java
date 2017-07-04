@@ -25,14 +25,15 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable {
     public final static int NUM_CLS_TRAIN_IMAGES = 1281167;
     public final static int NUM_CLS_VAL_IMAGES = 50000;
     public final static int NUM_CLS_TEST_IMAGES = 100000;
-    public final static int NUM_CLS_LABELS = 1861; // 1000 main with 860 ancestors
+    public final static int NUM_CLS_LABELS = 5; // 1000 main with 860 ancestors 增加了三个数字识别的labels 1861 by zl
 
     public final static int NUM_DET_TRAIN_IMAGES = 395918;
     public final static int NUM_DET_VAL_IMAGES = 20121;
     public final static int NUM_DET_TEST_IMAGES = 40152;
 
-    public final static int WIDTH = 224;
-    public final static int HEIGHT = 224;
+    public final static int WIDTH = 112;//by zl
+    public final static int HEIGHT = 112;
+ // channels refer to the color depth of the image, 1 for greyscale, 3 for RGB
     public final static int CHANNELS = 3;
 
     public final static String BASE_DIR = FilenameUtils.concat(System.getProperty("user.dir"), "src/main/resources/");
@@ -159,14 +160,26 @@ public class ImageNetLoader extends NativeImageLoader implements Serializable {
             int count = 0;
             while (reader.hasNext()) {
                 Collection<Writable> val = reader.next();
-                Object url = val.toArray()[1];
+                //网络欠佳,改为本地下载
+                /**
+                 * 下载代理
+                 * -Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=56731 by zl
+                 */
+                String url = val.toArray()[1].toString();
+                String localUrl = null;
+                if(url.indexOf("localhost")==-1)
+                	localUrl = "http://localhost/imageNet/"+url.substring(url.lastIndexOf("/")+1);
+                else
+                	localUrl = url;
                 String fileName = val.toArray()[0] + "_" + count++ + ".jpg";
                 try {
-                    downloadAndUntar(generateMaps(fileName, url.toString()), fullDir);
+                    downloadAndUntar(generateMaps(fileName, localUrl), fullDir);
+                    System.out.println(">>>>>>"+fileName+"<<<<<<");
                 } catch (Exception e) {
                     log.error("fileName is {}, url: {} is cann`t download", fileName, url);
-                    e.printStackTrace();
-                    throw e;
+                    System.err.println(fileName);
+//                    e.printStackTrace();
+//                    throw e;
                 }
             }
         }

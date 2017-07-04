@@ -7,6 +7,7 @@ import imagenet.Utils.ImageNetRecordReader;
 import org.apache.commons.io.FilenameUtils;
 import org.datavec.image.transform.FlipImageTransform;
 import org.datavec.image.transform.ImageTransform;
+import org.datavec.image.transform.ResizeImageTransform;
 import org.datavec.image.transform.WarpImageTransform;
 import org.deeplearning4j.datasets.datavec.RecordReaderDataSetIterator;
 import org.deeplearning4j.datasets.iterator.MultipleEpochsIterator;
@@ -16,6 +17,7 @@ import org.deeplearning4j.nn.multilayer.MultiLayerNetwork;
 import org.deeplearning4j.optimize.api.IterationListener;
 import org.deeplearning4j.optimize.listeners.ParamAndGradientIterationListener;
 import org.deeplearning4j.optimize.listeners.ScoreIterationListener;
+import org.deeplearning4j.util.ModelSerializer;
 import org.deeplearning4j.util.NetSaverLoaderUtils;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
@@ -32,6 +34,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 
@@ -88,7 +91,7 @@ public class ImageNetMain {
     protected String confName;
     @Option(name="--paramName",usage="Parameter file name",aliases="-param")
     protected String paramName;
-
+    //-mT=VGGNetA -sM=true -sP=true -conf=D:\\test\\imagenet\\model -param=D:\\test\\imagenet\\params
     protected long startTime;
     protected long endTime;
     protected int trainTime;
@@ -125,7 +128,10 @@ public class ImageNetMain {
     protected ComputationGraph modelCG = null;
 
     public void run(String[] args) throws Exception {
-        Nd4j.dtype = DataBuffer.Type.FLOAT;
+    	for(String arg : args)
+    		System.err.println(arg);
+//        Nd4j.dtype = DataBuffer.Type.FLOAT;
+    	Nd4j.setDataType(DataBuffer.Type.FLOAT);
         // Parse command line arguments if they exist
         CmdLineParser parser = new CmdLineParser(this);
         try {
@@ -146,7 +152,8 @@ public class ImageNetMain {
             // Train
             ImageTransform flipTransform = new FlipImageTransform(new Random(42));
             ImageTransform warpTransform = new WarpImageTransform(new Random(42), 42);
-            List<ImageTransform> transforms = Arrays.asList(new ImageTransform[] {null, flipTransform, warpTransform});
+//            ImageTransform resizeform = new ResizeImageTransform(112,112); by zl
+            List<ImageTransform> transforms = Arrays.asList(new ImageTransform[] {null});//,warpTransform, flipTransform by zl
             ImageNetRecordReader reader = new ImageNetRecordReader(DataModeEnum.CLS_TRAIN, batchSize, numExamples, numLabels, maxExamplesPerLabelTrain, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
             DataSetIterator iter;
             DataNormalization scaler = new ImagePreProcessingScaler();
@@ -161,7 +168,7 @@ public class ImageNetMain {
                 trainIter = new MultipleEpochsIterator(numEpochs, iter);
                 trainTime = trainModel(trainIter);
             }
-
+            reader.close();
             // Evaluation
             reader = new ImageNetRecordReader(DataModeEnum.CLS_TEST, batchSize, numExamples, numLabels, maxExamplesPerLabelTest, height, width, channels, ImageNetLoader.LABEL_PATTERN, splitTrainTest, rng);
             iter = new RecordReaderDataSetIterator(reader.getSplit(null, 0), batchSize, 1, numLabels);
@@ -173,8 +180,11 @@ public class ImageNetMain {
             // Save
             saveAndPrintResults();
 
+            //close
+            reader.close();
         }
-
+        for(String arg : args)
+    		System.err.println(arg);
         System.out.println("****************Example finished********************");
     }
 
@@ -251,10 +261,19 @@ public class ImageNetMain {
         printTime("test", testTime);
         System.out.println("Total evaluation runtime: " + testTime + " minutes");
         System.out.println("****************************************************");
+        /* by zl
         if (saveModel) NetSaverLoaderUtils.saveNetworkAndParameters(model, outputPath.toString());
         if (saveParams) NetSaverLoaderUtils.saveParameters(model, model.getLayerNames().toArray(new String[]{}), paramPaths);
         if (saveUpdater) NetSaverLoaderUtils.saveUpdators(model, updaterPath);
-
+        */
+        //zl -->
+        File locationToSave = new File("D:\\test\\imagenet\\model\\trained_mnist_model.zip");
+        try {
+			ModelSerializer.writeModel(model, locationToSave, false);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+        //<--
 
     }
 
